@@ -58,7 +58,10 @@ app.post("/account", async (request, response) => {
   await collection.insert(id, profile)
     .then(async () => {
       await collection.insert(request.body.email, account)
-        .then((result) => response.send(result))
+        .then((result) => {
+          result.pid = id
+          return response.send(result)
+        })
         .catch(async (e) => {
           await collection.remove(id)
             .then(() => {
