@@ -15,6 +15,7 @@ const cluster = new couchbase.Cluster('couchbase://localhost', {
 const bucket = cluster.bucket('blog')
 const collection = bucket.defaultCollection()
 
+// validation middleware
 const validate = async(request, response, next) => {
   const authHeader = request.headers["authorization"]
   if (authHeader) {
@@ -34,47 +35,7 @@ const validate = async(request, response, next) => {
   }
 }
 
-app.post("/blog", validate, async(request, response) => {
-  if(!request.body.title) {
-    return response.status(401).send({ "message": "A `title` is required" })
-  } else if(!request.body.content) {
-    return response.status(401).send({ "message": "A `content` is required" })
-  }
-  var blog = {
-    "type": "blog",
-    "pid": request.pid,
-    "title": request.body.title,
-    "content": request.body.content,
-    "timestamp": (new Date()).getTime()
-  }
-  const uniqueId = uuid.v4()
-  collection.insert(uniqueId, blog)
-    .then(() => response.send(blog))
-    .catch((e) => response.status(500).send(e))
-})
-
-app.get("/blogs", validate, async(request, response) => {
-  try {
-    const query = `SELECT * FROM \`blog\` WHERE type = 'blog' AND pid = $PID;`
-    const options = { parameters: { PID: request.pid } }
-    await cluster.query(query, options)
-      .then((result) => response.send(result.rows))
-      .catch((e) => response.status(500).send(e))
-  } catch (e) {
-    console.error(e.message)
-  }
-})
-
-app.get("/account", validate, async (request, response) => {
-  try {
-    await collection.get(request.pid)
-      .then((result) => response.send(result.value))
-      .catch((e) => response.status(500).send(e))
-  } catch (e) {
-    console.error(e.message)
-  }
-})
-
+// create account endpoint
 app.post("/account", async (request, response) => {
   if (!request.body.email) {
     return response.status(401).send({ "message": "An `email` is required" })
@@ -110,6 +71,7 @@ app.post("/account", async (request, response) => {
     .catch(e => response.status(500).send(e))
 })
 
+// login user endpoint
 app.post("/login", async (request, response) => {
   if (!request.body.email) {
     return response.status(401).send({ "message": "An `email` is required" })
@@ -134,6 +96,51 @@ app.post("/login", async (request, response) => {
     .catch(e => response.status(500).send(e))
 })
 
+// validate account endpoint
+app.get("/account", validate, async (request, response) => {
+  try {
+    await collection.get(request.pid)
+      .then((result) => response.send(result.value))
+      .catch((e) => response.status(500).send(e))
+  } catch (e) {
+    console.error(e.message)
+  }
+})
+
+// create blog endpoint
+app.post("/blog", validate, async(request, response) => {
+  if(!request.body.title) {
+    return response.status(401).send({ "message": "A `title` is required" })
+  } else if(!request.body.content) {
+    return response.status(401).send({ "message": "A `content` is required" })
+  }
+  var blog = {
+    "type": "blog",
+    "pid": request.pid,
+    "title": request.body.title,
+    "content": request.body.content,
+    "timestamp": (new Date()).getTime()
+  }
+  const uniqueId = uuid.v4()
+  collection.insert(uniqueId, blog)
+    .then(() => response.send(blog))
+    .catch((e) => response.status(500).send(e))
+})
+
+// get blog posts endpoint
+app.get("/blogs", validate, async(request, response) => {
+  try {
+    const query = `SELECT * FROM \`blog\` WHERE type = 'blog' AND pid = $PID;`
+    const options = { parameters: { PID: request.pid } }
+    await cluster.query(query, options)
+      .then((result) => response.send(result.rows))
+      .catch((e) => response.status(500).send(e))
+  } catch (e) {
+    console.error(e.message)
+  }
+})
+
+// get profile endpoint (bonus example, not covered in tutorial)
 app.get("/profile/:pid", async(request, response) => {
   try {
     const result = await collection.get(request.params.pid)
