@@ -3,9 +3,11 @@ const express = require('express')
 const uuid = require('uuid')
 const bodyParser = require('body-parser')
 const bcrypt = require('bcryptjs')
+const cors = require('cors')
 
 const app = express()
 
+app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -136,7 +138,10 @@ app.get("/blogs", validate, async(request, response) => {
     const query = `SELECT * FROM \`blog\` WHERE type = 'blog' AND pid = $PID;`
     const options = { parameters: { PID: request.pid } }
     await cluster.query(query, options)
-      .then((result) => response.send(result.rows))
+      .then((result) => {
+        console.log(result.rows)
+        response.send(result.rows)
+      })
       .catch((e) => response.status(500).send(e))
   } catch (e) {
     console.error(e.message)
