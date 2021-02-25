@@ -24,8 +24,6 @@ Let’s create a project directory for our Node.js app and install our dependenc
 ```
   mkdir blog-api  &&  cd blog-api  &&  npm init -y
   npm install couchbase express body-parser uuid bcryptjs cors --save
-  mkdir blog-api  &&  cd blog-api  &&  npm init -y
-  npm install couchbase express body-parser uuid bcryptjs cors --save
 ```
 
 This creates a working directory for our project and initializes a new Node project. Our dependencies include the [Node.js SDK for Couchbase](https://docs.couchbase.com/nodejs-sdk/3.1/hello-world/start-using-sdk.html) and Express Framework and other utility libraries like `body-parser` to accept JSON data via POST requests, `uuid` for generating unique keys and `bcryptjs` to hash our passwords to deter malicious users.
