@@ -78,7 +78,7 @@ Our user profile can have any information describing a `user` like `address`, `p
 
 Our profile document will have a key that we will refer to in our related documents. This key is an auto-generated UUID: `b181551f-071a-4539-96a5-8a3fe8717faf`.
 
-Our Profile document will have a JSON value that includes two properties: email and a type property. The type property is an important indicator that describes our document similar to how a table organizes records in a relational database. This is a standard convention in a document database.
+Our Profile document will have a JSON value that includes two properties: `email` and `type`. The type property is an important indicator that describes our document similar to how a table organizes records in a relational database. This is a standard convention in a document database.
 
 ```
 {
