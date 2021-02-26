@@ -19,7 +19,7 @@ These endpoints will be part of our API backend utilizing the Couchbase Server N
 
 ## Setting up a Couchbase database with Docker
 
-```
+```shell
 docker pull couchbase
 docker run -d --name cblatest -p 8091-8096:8091-8096 -p 11210-11211:11210-11211 couchbase
 ```
@@ -30,7 +30,7 @@ With your databse running locally you can access it and create a new bucket name
 
 Let’s create a project directory for our Node.js app and install our dependencies.
 
-```
+```shell
   mkdir blog-api  &&  cd blog-api  &&  npm init -y
   npm install couchbase express body-parser uuid bcryptjs cors --save
 ```
@@ -39,7 +39,7 @@ This creates a working directory for our project and initializes a new Node proj
 
 Let’s bootstrap our application with a `server.js` file:
 
-```
+```javascript
 const couchbase = require('couchbase')
 const express = require('express')
 const uuid = require('uuid')
@@ -66,7 +66,7 @@ The above code requires our dependencies and initializes an Express app running 
 
 We also need to create an index in Couchbase Server because we’ll be using the N1QL query language for one of our endpoints. If we access our Couchbase Server web console running locally on `localhost:8091`, we can click on the *Query* tab and execute this statement in the Query Editor:
 
-```
+```sql
 CREATE INDEX `blogbyuser` ON `blog`(type, pid);
 ```
 
@@ -76,21 +76,25 @@ Since we will obtain all blog posts for a particular profile id, we’ll get bet
 
 Our user profile can have any information describing a `user` like `address`, `phone`, and other social media info. It is never a good idea to store account credentials in the same document as our basic profile information. We’ll need a minimum of two documents for every user.
 
-Our profile document will have a key that we will refer to in our related documents. This key is an auto-generated UUID: `b181551f-071a-4539-96a5-8a3fe8717faf`.
+### Profile Document
 
-Our Profile document will have a JSON value that includes two properties: `email` and `type`. The type property is an important indicator that describes our document similar to how a table organizes records in a relational database. This is a standard convention in a document database.
+Our Profile document will have a *key* that we will refer to in our related documents. This key is an auto-generated UUID: `b181551f-071a-4539-96a5-8a3fe8717faf`.
 
-```
+It's *value* will includes two properties: `email` and `type`. The `type` property is an important indicator that describes our document similar to how a table organizes records in a relational database.
+
+```json
 {
   "type": "profile",
   "email": "user1234@gmail.com"
 }
 ```
 
-The account document associated with our profile will have a key that is equal to our user’s email:
-`user1234@gmail.com` and this document will have a type, as well as a pid referring to the key of our profile document along with `email` and hashed `password`.
+### Account Document
 
-```
+The account document associated with our [profile](#profile-document) will have a key that is equal to our user’s email:
+`user1234@gmail.com` and just as before, this document also will have a `type`, as well as a `pid` referring to the key of our [profile document](#profile-document) and a hashed `password`.
+
+```json
 {
   "type": "account",
   "pid": "b181551f-071a-4539-96a5-8a3fe8717faf",
@@ -103,9 +107,9 @@ Great, we have established a model for each document and a strategy for relating
 
 ## An Endpoint for Account Creation
 
-Add the following code to our `server.js` file:
+Add the following code to our `server.js` just above the last line of code which starts ourt server:
 
-```
+```javascript
 app.post("/account", async (request, response) => {
   if (!request.body.email) {
     return response.status(401).send({ "message": "An `email` is required" })
@@ -149,27 +153,23 @@ Let’s break this code down.
 
 First, we check that both an `email` and `password` exist in the request.
 
-Next, we create an `account` object and profile object based on the data that was sent in the request. The pid that we’re saving into the `account` object is a unique key. It will be set as the document key for our `profile` object.
+Next, we create an `account` object and profile object based on the data that was sent in the request. The `pid` that we’re saving in the `account` object is a unique key and will be set as the *key* for our `profile` document.
 
-The `account` document uses the email as it’s key. In the future, if other account details are needed (like alternate email, social login, etc.) we can associate other documents to the *profile*.
+Rather than saving the password in the `account` object as plain text, we hash it with [Bcrypt](https://www.npmjs.com/package/bcrypt). For more info on password hashing, check out [this tutorial](https://blog.couchbase.com/hashing-passwords-stored-in-couchbase-server-with-nodejs/).
 
-Rather than saving the password in the `account` object as plain text, we hash it with [Bcrypt](https://www.npmjs.com/package/bcrypt). The password is stripped from the `profile` object for security. For more info on password hashing, check out [this tutorial](https://blog.couchbase.com/hashing-passwords-stored-in-couchbase-server-with-nodejs/).
-
-With the data ready, we can insert it into Couchbase. The goal of this save is to be all or nothing. We want both the *account* and *profile* documents to be created successfully, otherwise roll it all back. Depending on the success, we’ll return some info to the client.
-
-We could have used N1QL queries for inserting the data, but it’s easier to use CRUD operations with no penalty on performance.
-
-With the data ready, we can insert it into Couchbase. The goal of this save is to be all or nothing. We want both the *profile* and *account* documents to be created successfully, otherwise roll it all back. Depending on the success, we’ll return some info to the client.
+With the data ready, we can insert it into Couchbase. The goal of this save is to be all or nothing. We want both the *account* and *profile* documents to be created successfully, otherwise we roll it all back. Depending on the success, we’ll return some info to the client.
 
 ## Using Session Tokens for Sensitive Data
 
-With the user *profile* and account created, we want the user to sign in and start doing activities that will store data and associate it with them.
+With the user *profile* and account created, the user can sign-in and start doing activities that will store data and associate it with them.
 
-We want to log in and establish a *session* that will be stored in the database referencing our user *profile*. This document will eventually expire and be removed from the database.
+### Session Document
+
+We want to log in and establish a *session* that will be stored in the database referencing our user *profile*. This document will eventually expire. Upon expiration, this document will be automatically removed from the database. Any activity beyond that point will require a new login and session.
 
 The session model will look like the following:
 
-```
+```json
 {
   "type": "session",
   "id": "ce0875cb-bd27-48eb-b561-beee33c9f405",
@@ -177,11 +177,11 @@ The session model will look like the following:
 }
 ```
 
-This document, like the others, has a different type. Just like with the *account* document, it has a `pid` property that references a user profile.
+Just like the *account* document, *session* has a `pid` property that references our user's *profile*.
 
 The code that makes this possible is in the *login* endpoint:
 
-```
+```javascript
 app.post("/login", async (request, response) => {
   if (!request.body.email) {
     return response.status(401).send({ "message": "An `email` is required" })
@@ -209,15 +209,15 @@ app.post("/login", async (request, response) => {
 
 After validating the incoming data we do an account lookup by email address. If data comes back for the email, we can compare the incoming password with the hashed password returned in the account lookup. Provided this succeeds, we can create a new session for the user.
 
-Unlike the previous insert operation, we set a document expiration of an hour (3600 ms). If the expiration isn’t refreshed, the document will disappear. This is good because it forces the user to sign in again and get a new session. This session token will be passed with every future request instead of the password.
+For this document we set an expiration of one hour (3600 ms). If the expiration isn’t refreshed, the document will disappear. This is good because it forces the user to sign-in again and get a new session. This session token will be passed with every future request instead of the password.
 
 ## Managing a User Session with Tokens
 
-We want to get information about our user profile as well as associate new things to the profile. For this, we confirm authority through the session.
+We want to get information about our user profile as well as associate new things to the profile, we confirm authority through the session.
 
-We can confirm the session is valid using middleware. A Middleware function can be added to any Express endpoint. This validation is a simple function that will have access to our endpoint’s HTTP request:
+We can confirm the session is valid using some Express middleware. A Middleware function can be added to any Express endpoint. This validation is a simple function that will have access to our endpoint’s HTTP request:
 
-```
+```javascript
 const validate = async(request, response, next) => {
   const authHeader = request.headers["authorization"]
   if (authHeader) {
@@ -238,13 +238,13 @@ const validate = async(request, response, next) => {
 }
 ```
 
-Here we are checking the request for an authorization header. If we have a valid bearer token with session id (sid), we can do a lookup. The session document has the profile id in it. If the session lookup is successful, we save the profile id (pid) in the request.
+Here we are checking the request for an authorization header. If we have a valid bearer token with session id (sid), we can do a lookup. The session document has the `pid` in it. If the session lookup is successful, we save the `pid` in the request.
 
-Next, we refresh the session expiration and move through the middleware and back to the endpoint. If the session doesn’t exist, no profile id will be passed and the request will fail.
+Next, we refresh the session expiration and move through the middleware and back to the endpoint. If the session doesn’t exist, no `pid` will be passed and the request will fail.
 
-Now we can use our middleware to get information about our profile in our account endpoint:
+Now we can use our middleware to get information about our *profile* in our account endpoint:
 
-```
+```javascript
 app.get("/account", validate, async (request, response) => {
   try {
     await collection.get(request.pid)
@@ -260,7 +260,7 @@ Notice the `validate` happens first and then the rest of the request. The `reque
 
 Next, we create an endpoint to add a blog article for the user:
 
-```
+```javascript
 app.post("/blog", validate, async(request, response) => {
   if(!request.body.title) {
     return response.status(401).send({ "message": "A `title` is required" })
@@ -285,7 +285,7 @@ Assuming the middleware succeeded, we create a blog object with a specific `type
 
 Querying for all blog posts by a particular user isn’t too much different:
 
-```
+```javascript
 app.get("/blogs", validate, async(request, response) => {
   try {
     const query = `SELECT * FROM `blog` WHERE type = 'blog' AND pid = $PID;`

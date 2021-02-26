@@ -12,7 +12,7 @@ Once you have Couchbase Server up and running with a bucket named `blog` and you
 Once installed run the endpoints in the following order:
 
 1. POST: `create account`  
-   copy the **pid** returned from this endpoint and update the **current value** of the environment variable named **pid** in the **"Couchbase Blog"** environment.
+   copy the **pid** returned from this endpoint and update the **current value** of the environment variable named **pid** in the **"Couchbase Blog"** environment. NOTE: The CAS returned is a value representing the current state of an item. Each time the item is modified, its CAS changes. The CAS value itself is returned as part of a document's metadata whenever a document is accessed.
 2. GET: `get profile`  
    Not covered in the tutorial, but this endpoint is ready to fetch a profile by **pid**
 3. POST: `login user`  
