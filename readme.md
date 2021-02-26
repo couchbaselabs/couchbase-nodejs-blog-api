@@ -67,7 +67,7 @@ The above code requires our dependencies and initializes an Express app running 
 We also need to create an index in Couchbase Server because we’ll be using the N1QL query language for one of our endpoints. If we access our Couchbase Server web console running locally on `localhost:8091`, we can click on the *Query* tab and execute this statement in the Query Editor:
 
 ```
-CREATE INDEX `blogbyuser` ON `default`(type, pid);
+CREATE INDEX `blogbyuser` ON `blog`(type, pid);
 ```
 
 Since we will obtain all blog posts for a particular profile id, we’ll get better performance using this specific index rather than a general primary index. Primary Indexes are not recommended for production-level code.
