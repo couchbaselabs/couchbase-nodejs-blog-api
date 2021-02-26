@@ -17,6 +17,15 @@ We can manage all of this with the following API endpoints:
 
 These endpoints will be part of our API backend utilizing the Couchbase Server Node.js SDK.
 
+## Setting up a Couchbase database with Docker
+
+```
+docker pull couchbase
+docker run -d --name cblatest -p 8091-8096:8091-8096 -p 11210-11211:11210-11211 couchbase
+```
+
+With your databse running locally you can access it and create a new bucket named `blog` and you will be ready to start the rest of the tutorial.
+
 ## Creating the API with Node and Express
 
 Let’s create a project directory for our Node.js app and install our dependencies.
