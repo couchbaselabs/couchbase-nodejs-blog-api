@@ -169,10 +169,12 @@ Add the following code to our `server.js` just above the last line of code which
 
 ```javascript
 app.post("/account", async (request, response) => {
-  if (!request.body.email) {
-    return response.status(401).send({ "message": "An `email` is required" })
-  } else if (!request.body.password) {
-    return response.status(401).send({ "message": "A `password` is required" })
+  if (!request.body.email && !request.body.password) {
+    return response.status(401).send({ "message": "An `email` and `password` are required" })
+  } else if (!request.body.email || !request.body.password) {
+    return response.status(401).send({ 
+      "message": `A ${!request.body.email ? '`email`' : '`password`'} is required`
+    })
   }
 
   const id = uuid.v4()
@@ -261,10 +263,12 @@ The code that makes this possible is in the *login* endpoint:
 
 ```javascript
 app.post("/login", async (request, response) => {
-  if (!request.body.email) {
-    return response.status(401).send({ "message": "An `email` is required" })
-  } else if (!request.body.password) {
-    return response.status(401).send({ "message": "A `password` is required" })
+  if (!request.body.email && !request.body.password) {
+    return response.status(401).send({ "message": "An `email` and `password` are required" })
+  } else if (!request.body.email || !request.body.password) {
+    return response.status(401).send({ 
+      "message": `A ${!request.body.email ? '`email`' : '`password`'} is required`
+    })
   }
 
   await collection.get(request.body.email)
@@ -320,6 +324,8 @@ Here we are checking the request for an authorization header. If we have a valid
 
 Next, we refresh the session expiration and move through the middleware and back to the endpoint. If the session doesn’t exist, no `pid` will be passed and the request will fail.
 
+*\** Note: Now that we know how middleware works, challenge yourself to create a midleware to check for email and password on the `/account` and `/login` POST endpoints. It should be as easy as extracting the duplicated code to its own fuction, adding a call to `next()` after the if/esle and adding the newly named function as a second argument to the existing endpoints.
+
 Now we can use our middleware to get information about our *profile* in our account endpoint:
 
 ```javascript
@@ -342,10 +348,12 @@ Next, we create an endpoint to add a blog article for the user:
 
 ```javascript
 app.post("/blog", validate, async(request, response) => {
-  if(!request.body.title) {
-    return response.status(401).send({ "message": "A `title` is required" })
-  } else if(!request.body.content) {
-    return response.status(401).send({ "message": "A `content` is required" })
+  if (!request.body.title && !request.body.content) {
+    return response.status(401).send({ "message": "A `title` and `content` are required for each blog post" })
+  } else if (!request.body.title || !request.body.content) {
+    return response.status(401).send({ 
+      "message": `A ${!request.body.title ? '`title`' : '`content`'} is required for each blog post`
+    })
   }
   var blog = {
     "type": "blog",
