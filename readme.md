@@ -1,6 +1,6 @@
 # Basic Blog API with User Profile store and Session
 
-We will be creating a user profile store and session for a blog API using Node, Couchbase's NodeJS SDK 3 and we'll review basic data modeling techniques for our document structure specific to working with a document database. 
+We will be creating a user profile store and session for a blog API using Node, Couchbase's NodeJS SDK 3 and we'll review basic data modeling techniques for our document structure specific to working with a document database.
 
 Let’s define some rules around our very basic user profile store concept:
 
@@ -291,7 +291,7 @@ app.post("/login", async (request, response) => {
 
 After validating the incoming data we do an account lookup by email address. If data comes back for the email, we can compare the incoming password with the hashed password returned in the account lookup. Provided this succeeds, we can create a new session for the user.
 
-For this document we set an expiration of one hour (3600 ms). If the expiration isn’t refreshed, the document will disappear. This is good because it forces the user to sign-in again and get a new session. This session token will be passed with every future request instead of the password.
+For this document we set an expiration of one hour (3600 s). If the expiration isn’t refreshed, the document will disappear. This is good because it forces the user to sign-in again and get a new session. This session token will be passed with every future request instead of the password.
 
 ## Managing a User Session with Tokens
 
